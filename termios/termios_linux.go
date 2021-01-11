@@ -75,7 +75,7 @@ func Tiocoutq(fd uintptr, argp *int) error {
 }
 
 // Cfgetispeed returns the input baud rate stored in the termios structure.
-func Cfgetispeed(attr *syscall.Termios) uint32 { return attr.Ispeed }
+// func Cfgetispeed(attr *syscall.Termios) uint32 { return attr.Ispeed }
 
 // Cfgetospeed returns the output baud rate stored in the termios structure.
-func Cfgetospeed(attr *syscall.Termios) uint32 { return attr.Ospeed }
+// func Cfgetospeed(attr *syscall.Termios) uint32 { return attr.Ospeed }

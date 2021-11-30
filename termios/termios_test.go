@@ -1,35 +1,32 @@
+// +build !windows
+
 package termios
 
 import (
-	"flag"
 	"os"
 	"runtime"
-	"syscall"
 	"testing"
-)
 
-var dev = flag.String("device", "/dev/tty", "device to use")
+	"golang.org/x/sys/unix"
+)
 
 func TestTcgetattr(t *testing.T) {
 	f := opendev(t)
-	defer f.Close()
 
-	var termios syscall.Termios
-	if err := Tcgetattr(f.Fd(), &termios); err != nil {
+	if _, err := Tcgetattr(f.Fd()); err != nil {
 		t.Fatal(err)
 	}
 }
 
 func TestTcsetattr(t *testing.T) {
 	f := opendev(t)
-	defer f.Close()
 
-	var termios syscall.Termios
-	if err := Tcgetattr(f.Fd(), &termios); err != nil {
+	termios, err := Tcgetattr(f.Fd())
+	if err != nil {
 		t.Fatal(err)
 	}
 	for _, opt := range []uintptr{TCSANOW, TCSADRAIN, TCSAFLUSH} {
-		if err := Tcsetattr(f.Fd(), opt, &termios); err != nil {
+		if err := Tcsetattr(f.Fd(), opt, termios); err != nil {
 			t.Fatal(err)
 		}
 	}
@@ -37,7 +34,6 @@ func TestTcsetattr(t *testing.T) {
 
 func TestTcsendbreak(t *testing.T) {
 	f := opendev(t)
-	defer f.Close()
 
 	if err := Tcsendbreak(f.Fd(), 0); err != nil {
 		t.Fatal(err)
@@ -46,7 +42,6 @@ func TestTcsendbreak(t *testing.T) {
 
 func TestTcdrain(t *testing.T) {
 	f := opendev(t)
-	defer f.Close()
 
 	if err := Tcdrain(f.Fd()); err != nil {
 		t.Fatal(err)
@@ -55,10 +50,8 @@ func TestTcdrain(t *testing.T) {
 
 func TestTiocmget(t *testing.T) {
 	f := opendev(t)
-	defer f.Close()
 
-	var status int
-	if err := Tiocmget(f.Fd(), &status); err != nil {
+	if _, err := Tiocmget(f.Fd()); err != nil {
 		checktty(t, err)
 		t.Fatal(err)
 	}
@@ -66,14 +59,13 @@ func TestTiocmget(t *testing.T) {
 
 func TestTiocmset(t *testing.T) {
 	f := opendev(t)
-	defer f.Close()
 
-	var status int
-	if err := Tiocmget(f.Fd(), &status); err != nil {
+	status, err := Tiocmget(f.Fd())
+	if err != nil {
 		checktty(t, err)
 		t.Fatal(err)
 	}
-	if err := Tiocmset(f.Fd(), &status); err != nil {
+	if err := Tiocmset(f.Fd(), status); err != nil {
 		checktty(t, err)
 		t.Fatal(err)
 	}
@@ -81,10 +73,8 @@ func TestTiocmset(t *testing.T) {
 
 func TestTiocmbis(t *testing.T) {
 	f := opendev(t)
-	defer f.Close()
 
-	status := 0
-	if err := Tiocmbis(f.Fd(), &status); err != nil {
+	if err := Tiocmbis(f.Fd(), 0); err != nil {
 		checktty(t, err)
 		t.Fatal(err)
 	}
@@ -92,10 +82,8 @@ func TestTiocmbis(t *testing.T) {
 
 func TestTiocmbic(t *testing.T) {
 	f := opendev(t)
-	defer f.Close()
 
-	status := 0
-	if err := Tiocmbic(f.Fd(), &status); err != nil {
+	if err := Tiocmbic(f.Fd(), 0); err != nil {
 		checktty(t, err)
 		t.Fatal(err)
 	}
@@ -103,10 +91,9 @@ func TestTiocmbic(t *testing.T) {
 
 func TestTiocinq(t *testing.T) {
 	f := opendev(t)
-	defer f.Close()
 
-	var inq int
-	if err := Tiocinq(f.Fd(), &inq); err != nil {
+	inq, err := Tiocinq(f.Fd())
+	if err != nil {
 		t.Fatal(err)
 	}
 	if inq != 0 {
@@ -116,10 +103,9 @@ func TestTiocinq(t *testing.T) {
 
 func TestTiocoutq(t *testing.T) {
 	f := opendev(t)
-	defer f.Close()
 
-	var inq int
-	if err := Tiocoutq(f.Fd(), &inq); err != nil {
+	inq, err := Tiocoutq(f.Fd())
+	if err != nil {
 		t.Fatal(err)
 	}
 	if inq != 0 {
@@ -129,26 +115,24 @@ func TestTiocoutq(t *testing.T) {
 
 func TestCfgetispeed(t *testing.T) {
 	f := opendev(t)
-	defer f.Close()
 
-	var termios syscall.Termios
-	if err := Tcgetattr(f.Fd(), &termios); err != nil {
+	termios, err := Tcgetattr(f.Fd())
+	if err != nil {
 		t.Fatal(err)
 	}
-	if baud := Cfgetispeed(&termios); baud == 0 && runtime.GOOS != "linux" {
+	if baud := Cfgetispeed(termios); baud == 0 && runtime.GOOS != "linux" {
 		t.Fatalf("Cfgetispeed: expected > 0, got %v", baud)
 	}
 }
 
 func TestCfgetospeed(t *testing.T) {
 	f := opendev(t)
-	defer f.Close()
 
-	var termios syscall.Termios
-	if err := Tcgetattr(f.Fd(), &termios); err != nil {
+	termios, err := Tcgetattr(f.Fd())
+	if err != nil {
 		t.Fatal(err)
 	}
-	if baud := Cfgetospeed(&termios); baud == 0 && runtime.GOOS != "linux" {
+	if baud := Cfgetospeed(termios); baud == 0 && runtime.GOOS != "linux" {
 		t.Fatalf("Cfgetospeed: expected > 0, got %v", baud)
 	}
 }
@@ -158,14 +142,17 @@ func opendev(t *testing.T) *os.File {
 	if err != nil {
 		t.Fatal(err)
 	}
+	t.Cleanup(func() {
+		pts.Close()
+	})
 	return pts
 }
 
 func checktty(t *testing.T, err error) {
-
+	t.Helper()
 	// some ioctls fail against char devices if they do not
 	// support a particular feature
-	if (runtime.GOOS == "darwin" && err == syscall.ENOTTY) || (runtime.GOOS == "linux" && err == syscall.EINVAL) {
+	if (runtime.GOOS == "darwin" && err == unix.ENOTTY) || (runtime.GOOS == "linux" && err == unix.EINVAL) {
 		t.Skip(err)
 	}
 }

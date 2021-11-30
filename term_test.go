@@ -1,10 +1,14 @@
+// +build !windows
+
 package term
 
 import (
 	"testing"
 
-	"github.com/pkg/term/termios"
 	"time"
+
+	"github.com/pkg/term/termios"
+	"golang.org/x/sys/unix"
 )
 
 // assert that Term implements the same method set across
@@ -12,9 +16,13 @@ import (
 var _ interface {
 	Available() (int, error)
 	Buffered() (int, error)
+	CTS() (bool, error)
 	Close() error
+	DCD() (bool, error)
+	DSR() (bool, error)
 	DTR() (bool, error)
 	Flush() error
+	RI() (bool, error)
 	RTS() (bool, error)
 	Read(b []byte) (int, error)
 	Restore() error
@@ -25,6 +33,7 @@ var _ interface {
 	SetRTS(v bool) error
 	SetRaw() error
 	SetSpeed(baud int) error
+	GetSpeed() (int, error)
 	Write(b []byte) (int, error)
 } = new(Term)
 
@@ -48,6 +57,20 @@ func TestTermSetSpeed(t *testing.T) {
 	tt := opendev(t)
 	defer tt.Close()
 	if err := tt.SetSpeed(57600); err != nil {
+		t.Fatal(err)
+	}
+
+	if spd, err := tt.GetSpeed(); err != nil {
+		t.Fatal(err)
+	} else if spd != 57600 {
+		t.Errorf("speed mismatch %d != 57600", spd)
+	}
+}
+
+func TestTermSetInvalidSpeed(t *testing.T) {
+	tt := opendev(t)
+	defer tt.Close()
+	if err := tt.SetSpeed(12345); err != unix.EINVAL {
 		t.Fatal(err)
 	}
 }

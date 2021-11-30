@@ -1,6 +1,12 @@
+// +build dragonfly freebsd
+
 package term
 
-import "golang.org/x/sys/unix"
+import (
+	"syscall"
+
+	"golang.org/x/sys/unix"
+)
 
 type attr unix.Termios
 
@@ -9,49 +15,49 @@ func (a *attr) getSpeed() (int, error) {
 	// be used for padding characters, for example.
 
 	switch a.Ospeed {
-	case unix.B50:
+	case syscall.B50:
 		return 50, nil
-	case unix.B75:
+	case syscall.B75:
 		return 75, nil
-	case unix.B110:
+	case syscall.B110:
 		return 110, nil
-	case unix.B134:
+	case syscall.B134:
 		return 134, nil
-	case unix.B150:
+	case syscall.B150:
 		return 150, nil
-	case unix.B200:
+	case syscall.B200:
 		return 200, nil
-	case unix.B300:
+	case syscall.B300:
 		return 300, nil
-	case unix.B600:
+	case syscall.B600:
 		return 600, nil
-	case unix.B1200:
+	case syscall.B1200:
 		return 1200, nil
-	case unix.B1800:
+	case syscall.B1800:
 		return 1800, nil
-	case unix.B2400:
+	case syscall.B2400:
 		return 2400, nil
-	case unix.B4800:
+	case syscall.B4800:
 		return 4800, nil
-	case unix.B9600:
+	case syscall.B9600:
 		return 9600, nil
-	case unix.B19200:
+	case syscall.B19200:
 		return 19200, nil
-	case unix.B38400:
+	case syscall.B38400:
 		return 38400, nil
-	case unix.B57600:
+	case syscall.B57600:
 		return 57600, nil
-	case unix.B115200:
+	case syscall.B115200:
 		return 115200, nil
-	case unix.B230400:
+	case syscall.B230400:
 		return 230400, nil
 	default:
-		return 0, unix.EINVAL
+		return 0, syscall.EINVAL
 	}
 }
 
 func (a *attr) setSpeed(baud int) error {
-	var rate uint64
+	var rate uint32
 	switch baud {
 	case 50:
 		rate = unix.B50
